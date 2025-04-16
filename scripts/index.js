@@ -1,11 +1,13 @@
+const cardTemplate = document.querySelector('#card-template').content;
+const cardContainer  = document.querySelector('.places__list');
+
 // Создает элемент карточки для вывода в html
 // * card информация о карточке (словарь):
 //   name: String
 //   link: String
 // * deleteCb - колбэк для удаления карточки
-function addCard(card, deleteCb) {
+function createCard(card, deleteCb) {
   // клонировать шаблон
-  const cardTemplate = document.querySelector('#card-template').content;
   const cardElement = cardTemplate.querySelector('.places__item').cloneNode(true);
 
   // установить значения вложенных элементов
@@ -35,10 +37,9 @@ function deleteCard(evt) {
 function showAllCards() {
   initialCards.forEach((item) => {
     // создать карточку
-    const cardElement = addCard(item, deleteCard);
+    const cardElement = createCard(item, deleteCard);
 
     // добавить карточку в DOM
-    const cardContainer  = document.querySelector('.page__content .content .places .places__list');
     cardContainer.append(cardElement);
   });
 }
