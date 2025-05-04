@@ -1,56 +1,21 @@
 import '../pages/index.css'; // Импорт стилей для Webpack
 
-import { openModal, closeModal } from './modal.js' // работа с модальными окнами
-import { initialCards } from './cards.js' // подгружаемые на старте карточки
-
-const cardTemplate = document.querySelector('#card-template').content;
-const cardContainer  = document.querySelector('.places__list');
-
+// модальное окно картинки, и её параметры (сама картинка и подпись)
 const popupTypeImage = document.querySelector('.popup_type_image');
 const popupImage = popupTypeImage.querySelector('.popup__image');
 const popupCaption = popupTypeImage.querySelector('.popup__caption');
 
-//-------- Добавление карточек в DOM
+import { openModal, closeModal } from './modal.js' // работа с модальными окнами
+import { createCard, deleteCard, likeCard, initialCards, constructCard } from './cards.js'
 
-// Создает элемент карточки для вывода в html
-// * card информация о карточке (словарь):
-//   name: String
-//   link: String
-// * deleteCb - колбэк для удаления карточки
-function createCard(card, deleteCb, clickCb) {
-  // клонировать шаблон
-  const cardElement = cardTemplate.querySelector('.places__item').cloneNode(true);
 
-  // установить значения вложенных элементов
-  const imageElement = cardElement.querySelector('.card__image');
-  imageElement.src = card.link;
-  imageElement.alt = card.name;
+//-------- Выводит карточки на страницу
+const cardContainer  = document.querySelector('.places__list');
 
-  const descriptionElement = cardElement.querySelector('.card__description .card__title');
-  descriptionElement.textContent = card.name;
-
-  // добавить к иконке удаления обработчик клика,
-  // по которому будет вызван deleteCb
-  const deleteButton  = cardElement.querySelector('.card__delete-button');
-  deleteButton.addEventListener('click', deleteCb);
-
-  clickCb(imageElement);
-
-  return cardElement;
-}
-
-// Удаляет карточку
-function deleteCard(evt) {
-  const deleteButton = evt.target;
-  const listItem = deleteButton.closest('.places__item');
-  listItem.remove();
-}
-
-// Выводит карточки на страницу
 function showAllCards() {
   initialCards.forEach((item) => {
     // создать карточку
-    const cardElement = createCard(item, deleteCard, clickOnImageCb);
+    const cardElement = createCard(item, deleteCard, likeCard, clickOnImageCb);
 
     // добавить карточку в DOM
     cardContainer.append(cardElement);
@@ -59,11 +24,10 @@ function showAllCards() {
 
 showAllCards();
 
-
-//-------- модальные окна всякие (произвольные)
+//-------- модальные окна всякие, обработка событий для открытия/закрытия модальных окон
 const profileEditButton = document.querySelector('.profile__edit-button');
 const profileAddButton = document.querySelector('.profile__add-button');
-const popupTypeEdit = document.querySelector('.popup_type_edit'); // модольное окно редактирования профиля
+const popupTypeEdit = document.querySelector('.popup_type_edit');
 const popupTypeNewCard = document.querySelector('.popup_type_new-card');
 
 const popups = [
@@ -124,9 +88,53 @@ function addListeners(modal, button) {
   }
 }
 
+// добавить слушателей модальным окнам
 popups.forEach((item) => {
   addListeners(item.modal, item.button)
 });
+
+
+//-------- модальное окно редактиорования профиля
+import { addSubmitProfileCb } from './profile.js'; // работа с окном редактирования профиля
+addSubmitProfileCb(() => {
+  closeModal(popupTypeEdit);
+});
+
+
+//-------- модальное окно добавления новой карточки
+const formElement = document.querySelector('.popup_type_new-card');
+
+// поля input формы formElement
+const placeNameInput = formElement.querySelector('.popup__input_type_card-name');
+const linkInput = formElement.querySelector('.popup__input_type_url');
+
+// для закрытия формы после submit
+const clickCbArr = [];
+
+// Обработчик «отправки» формы
+function handleFormSubmit(evt) {
+  evt.preventDefault(); // Отменить стандартную отправку формы.
+
+  const placeName = placeNameInput.value;
+  const link = linkInput.value;
+
+  // очистить форму
+  placeNameInput.value = '';
+  linkInput.value = '';
+
+  // создать карточку
+  const card = constructCard(placeName, link);
+  const cardElement = createCard(card, deleteCard, likeCard, clickOnImageCb);
+
+  // добавить карточку в DOM в начало списка
+  cardContainer.prepend(cardElement);
+
+  // закрыть модальное окно
+  closeModal(popupTypeNewCard);
+}
+
+// Прикрепить обработчик к форме:
+formElement.addEventListener('submit', handleFormSubmit);
 
 
 //-------- модальное окно картинки
