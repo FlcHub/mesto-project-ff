@@ -39,9 +39,10 @@ const cardTemplate = document.querySelector('#card-template').content;
 // * card информация о карточке (словарь):
 //   name: String
 //   link: String
-// * deleteCb - колбэк для удаления карточки
-// * clickCb - колбэк для обработки нажатия на картинку
-function createCard(card, deleteCb, likeCb, clickCb) {
+// * handleDeleteCard: function   - функция-обработчик события клика по иконке удаления карточки
+// * handleLikeCard: function     - функция-обработчик события клика по иконке  лайка карточки
+// * handleClickOnImage: function - функция-обработчик события нажатия на картинку
+function createCard(card, handleDeleteCard, handleLikeCard, handleClickOnImage) {
   // клонировать шаблон
   const cardElement = cardTemplate.querySelector('.places__item').cloneNode(true);
 
@@ -54,30 +55,30 @@ function createCard(card, deleteCb, likeCb, clickCb) {
   descriptionElement.textContent = card.name;
 
   // добавить к иконке удаления обработчик клика,
-  // по которому будет вызван deleteCb
+  // по которому будет вызван handleDeleteCard
   const deleteButton  = cardElement.querySelector('.card__delete-button');
-  deleteButton.addEventListener('click', deleteCb);
+  deleteButton.addEventListener('click', handleDeleteCard);
 
   // добавить к иконке лайка карточки обработчик клика,
-  // по которому будет вызван likeCb
+  // по которому будет вызван handleLikeCard
   const likeButton  = cardElement.querySelector('.card__like-button');
-  likeButton.addEventListener('click', likeCb);
+  likeButton.addEventListener('click', handleLikeCard);
 
-  clickCb(imageElement);
+  imageElement.addEventListener('click', handleClickOnImage);
 
   return cardElement;
 }
 
 // Удаляет карточку
-function deleteCard(evt) {
+function handleDeleteCard(evt) {
   const deleteButton = evt.target;
   const listItem = deleteButton.closest('.places__item');
   listItem.remove();
 }
 
 //-------- функция лайка карточки
-function handleLikeButtonClickEvent(evt) {
+function handleLikeCard(evt) {
   evt.target.classList.toggle('card__like-button_is-active');
 }
 
-export { createCard, deleteCard, handleLikeButtonClickEvent as likeCard, initialCards, constructCard };
+export { createCard, handleDeleteCard, handleLikeCard, initialCards, constructCard };

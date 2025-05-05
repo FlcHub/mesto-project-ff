@@ -6,7 +6,7 @@ const popupImage = popupTypeImage.querySelector('.popup__image');
 const popupCaption = popupTypeImage.querySelector('.popup__caption');
 
 import { openModal, closeModal } from './modal.js' // работа с модальными окнами
-import { createCard, deleteCard, likeCard, initialCards, constructCard } from './cards.js'
+import { createCard, handleDeleteCard, handleLikeCard, initialCards, constructCard } from './cards.js'
 
 
 //-------- Выводит карточки на страницу
@@ -15,7 +15,7 @@ const cardContainer  = document.querySelector('.places__list');
 function showAllCards() {
   initialCards.forEach((item) => {
     // создать карточку
-    const cardElement = createCard(item, deleteCard, likeCard, clickOnImageCb);
+    const cardElement = createCard(item, handleDeleteCard, handleLikeCard, handleClickOnImage);
 
     // добавить карточку в DOM
     cardContainer.append(cardElement);
@@ -27,92 +27,57 @@ showAllCards();
 //-------- модальные окна всякие, обработка событий для открытия/закрытия модальных окон
 const profileEditButton = document.querySelector('.profile__edit-button');
 const profileAddButton = document.querySelector('.profile__add-button');
-const popupTypeEdit = document.querySelector('.popup_type_edit');
-const popupTypeNewCard = document.querySelector('.popup_type_new-card');
+const popupEdit = document.querySelector('.popup_type_edit');
+const popupNewCard = document.querySelector('.popup_type_new-card');
 
-const popups = [
-  {
-    modal : popupTypeEdit,
-    button : profileEditButton,
-  },
-  {
-    modal : popupTypeNewCard,
-    button : profileAddButton,
-  },
-  {
-    modal : popupTypeImage,
-  },
-];
-
-function processClose(modal) {
-  // закрыть окно
-  closeModal(modal);
-
-  // удалить слушателя
-  document.removeEventListener('keydown', handleKeydownEvent);
-}
-
-function handleKeydownEvent(evt) {
-  if (evt.key !== 'Escape') {
-    return;
-  }
-  popups.forEach((item) => {
-    if (item.modal.classList.contains('popup_is-opened')) {
-      processClose(item.modal);
-    }
-  });
-}
-
-function addListeners(modal, button) {
-  modal.addEventListener('click', function(evt) {
-    // если кликнули за пределами модального окна
-    if (!evt.target.closest('.popup__content')) {
-      processClose(modal);
-      return
-    }
-
-    // если кликнули по крестику
-    if (evt.target.classList.contains('popup__close')) {
-      processClose(modal);
-    }
-  });
-
-  if (button) {
-    button.addEventListener('click', function(evt) {
-      // открыть модальное окно
-      openModal(modal);
-
-      // добавить слушателя, который при нажатии на кнопку ESC вызывает функцию, закрывающую модальное окно
-      document.addEventListener('keydown', handleKeydownEvent);
-    });
-  }
-}
-
-// добавить слушателей модальным окнам
-popups.forEach((item) => {
-  addListeners(item.modal, item.button)
+profileEditButton.addEventListener('click', function(evt) {
+  openModal(popupEdit);
 });
 
+profileAddButton.addEventListener('click', function(evt) {
+  openModal(popupNewCard);
+});
 
 //-------- модальное окно редактиорования профиля
-import { addSubmitProfileCb } from './profile.js'; // работа с окном редактирования профиля
-addSubmitProfileCb(() => {
-  closeModal(popupTypeEdit);
+// поля input формы popupEdit
+const nameInput = popupEdit.querySelector('.popup__input_type_name');
+const jobInput = popupEdit.querySelector('.popup__input_type_description');
+
+// имя профиля и работа, поля, куда надо вставить значения из nameInput и jobInput
+const nameLabel = document.querySelector('.profile__title');
+const jobLabel = document.querySelector('.profile__description');
+
+// Обработчик «отправки» формы
+function handleEditFormSubmit(evt) {
+  evt.preventDefault(); // Отменить стандартную отправку формы.
+
+  const name = nameInput.value;
+  const job = jobInput.value;
+
+  nameLabel.textContent = name;
+  jobLabel.textContent = job;
+
+  closeModal(popupEdit);
+}
+
+// Прикрепляем обработчик к форме:
+// он будет следить за событием “submit” - «отправка»
+popupEdit.addEventListener('submit', handleEditFormSubmit);
+
+// Обработчик для кнопки, открывающей форму, чтобы перезаписать значения полей ввода
+profileEditButton.addEventListener('click', function(evt) {
+  nameInput.value = nameLabel.textContent;
+  jobInput.value = jobLabel.textContent;
 });
 
 
 //-------- модальное окно добавления новой карточки
-const formElement = document.querySelector('.popup_type_new-card');
-
-// поля input формы formElement
-const placeNameInput = formElement.querySelector('.popup__input_type_card-name');
-const linkInput = formElement.querySelector('.popup__input_type_url');
-
-// для закрытия формы после submit
-const clickCbArr = [];
+// поля input формы popupNewCard
+const placeNameInput = popupNewCard.querySelector('.popup__input_type_card-name');
+const linkInput = popupNewCard.querySelector('.popup__input_type_url');
 
 // Обработчик «отправки» формы
-function handleFormSubmit(evt) {
+function handleCardFormSubmit(evt) {
   evt.preventDefault(); // Отменить стандартную отправку формы.
 
   const placeName = placeNameInput.value;
@@ -124,31 +89,26 @@ function handleFormSubmit(evt) {
 
   // создать карточку
   const card = constructCard(placeName, link);
-  const cardElement = createCard(card, deleteCard, likeCard, clickOnImageCb);
+  const cardElement = createCard(card, handleDeleteCard, handleLikeCard, handleClickOnImage);
 
   // добавить карточку в DOM в начало списка
   cardContainer.prepend(cardElement);
 
   // закрыть модальное окно
-  closeModal(popupTypeNewCard);
+  closeModal(popupNewCard);
 }
 
 // Прикрепить обработчик к форме:
-formElement.addEventListener('submit', handleFormSubmit);
+popupNewCard.addEventListener('submit', handleCardFormSubmit);
 
 
 //-------- модальное окно картинки
-function clickOnImageCb(imageElement) {
-  imageElement.addEventListener('click', function(evt) {
-    // добавить картинку и подпись
-    popupImage.src = imageElement.src;
-    popupImage.alt = imageElement.alt;
-    popupCaption.textContent = imageElement.alt;
+function handleClickOnImage(evt) {
+  // добавить картинку и подпись
+  popupImage.src = evt.target.src;
+  popupImage.alt = evt.target.alt;
+  popupCaption.textContent = evt.target.alt;
 
-    // открыть модальное окно
-    openModal(popupTypeImage);
-
-    // добавить слушателя, который при нажатии на кнопку ESC вызывает функцию, закрывающую модальное окно
-    document.addEventListener('keydown', handleKeydownEvent);
-  });
+  // открыть модальное окно
+  openModal(popupTypeImage);
 }
