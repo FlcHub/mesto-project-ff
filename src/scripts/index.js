@@ -25,6 +25,22 @@ function showAllCards() {
 
 showAllCards();
 
+
+//-------- валидация форм
+import { enableValidation, clearValidation } from './validation.js';
+
+const popupProperties = {
+  formSelector: '.popup__form',
+  inputSelector: '.popup__input',
+  submitButtonSelector: '.popup__button',
+  inactiveButtonClass: 'popup__button_disabled',
+  inputErrorClass: 'popup__input_type_error',
+  errorClass: 'popup__error_visible'
+};
+
+enableValidation(popupProperties);
+
+
 //-------- модальные окна всякие, обработка событий для открытия/закрытия модальных окон
 const profileEditButton = document.querySelector('.profile__edit-button');
 const profileAddButton = document.querySelector('.profile__add-button');
@@ -32,6 +48,7 @@ const popupEdit = document.querySelector('.popup_type_edit');
 const popupNewCard = document.querySelector('.popup_type_new-card');
 
 profileAddButton.addEventListener('click', function(evt) {
+  clearValidation(popupNewCard.querySelector(popupProperties.formSelector), popupProperties);
   openModal(popupNewCard);
 });
 
@@ -65,6 +82,7 @@ popupEdit.addEventListener('submit', handleEditFormSubmit);
 profileEditButton.addEventListener('click', function(evt) {
   nameInput.value = nameLabel.textContent;
   jobInput.value = jobLabel.textContent;
+  clearValidation(popupEdit.querySelector(popupProperties.formSelector), popupProperties);
   openModal(popupEdit);
 });
 
