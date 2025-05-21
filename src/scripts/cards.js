@@ -1,30 +1,3 @@
-const initialCards = [
-    {
-      name: "Архыз",
-      link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/arkhyz.jpg",
-    },
-    {
-      name: "Челябинская область",
-      link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/chelyabinsk-oblast.jpg",
-    },
-    {
-      name: "Иваново",
-      link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/ivanovo.jpg",
-    },
-    {
-      name: "Камчатка",
-      link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/kamchatka.jpg",
-    },
-    {
-      name: "Холмогорский район",
-      link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/kholmogorsky-rayon.jpg",
-    },
-    {
-      name: "Байкал",
-      link: "https://pictures.s3.yandex.net/frontend-developer/cards-compressed/baikal.jpg",
-    }
-];
-
 function constructCard(placeName, link) {
   return {
     name: placeName,
@@ -39,10 +12,10 @@ const cardTemplate = document.querySelector('#card-template').content;
 // * card информация о карточке (словарь):
 //   name: String
 //   link: String
-// * handleDeleteCard: function   - функция-обработчик события клика по иконке удаления карточки
-// * handleLikeCard: function     - функция-обработчик события клика по иконке  лайка карточки
-// * handleClickOnImage: function - функция-обработчик события нажатия на картинку
-function createCard(card, handleDeleteCard, handleLikeCard, handleClickOnImage) {
+// * deleteCard: function   - функция-обработчик события клика по иконке удаления карточки
+// * likeCard: function     - функция-обработчик события клика по иконке  лайка карточки
+// * clickOnImage: function - функция-обработчик события нажатия на картинку
+function createCard(card, deleteCard, likeCard, clickOnImage) {
   // клонировать шаблон
   const cardElement = cardTemplate.querySelector('.places__item').cloneNode(true);
 
@@ -55,30 +28,28 @@ function createCard(card, handleDeleteCard, handleLikeCard, handleClickOnImage) 
   descriptionElement.textContent = card.name;
 
   // добавить к иконке удаления обработчик клика,
-  // по которому будет вызван handleDeleteCard
+  // по которому будет вызван deleteCard
   const deleteButton  = cardElement.querySelector('.card__delete-button');
-  deleteButton.addEventListener('click', handleDeleteCard);
+  deleteButton.addEventListener('click', () => { deleteCard(cardElement) });
 
   // добавить к иконке лайка карточки обработчик клика,
-  // по которому будет вызван handleLikeCard
+  // по которому будет вызван likeCard
   const likeButton  = cardElement.querySelector('.card__like-button');
-  likeButton.addEventListener('click', handleLikeCard);
+  likeButton.addEventListener('click', () => { likeCard(likeButton)});
 
-  imageElement.addEventListener('click', handleClickOnImage);
+  imageElement.addEventListener('click', () => { clickOnImage(imageElement)});
 
   return cardElement;
 }
 
 // Удаляет карточку
-function handleDeleteCard(evt) {
-  const deleteButton = evt.target;
-  const listItem = deleteButton.closest('.places__item');
-  listItem.remove();
+function deleteCard(cardElement) {
+  cardElement.remove();
 }
 
 //-------- функция лайка карточки
-function handleLikeCard(evt) {
-  evt.target.classList.toggle('card__like-button_is-active');
+function likeCard(likeButton) {
+  likeButton.classList.toggle('card__like-button_is-active');
 }
 
-export { createCard, handleDeleteCard, handleLikeCard, initialCards, constructCard };
+export { createCard, deleteCard, likeCard, constructCard };

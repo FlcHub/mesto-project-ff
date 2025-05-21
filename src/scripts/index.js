@@ -6,7 +6,8 @@ const popupImage = popupTypeImage.querySelector('.popup__image');
 const popupCaption = popupTypeImage.querySelector('.popup__caption');
 
 import { openModal, closeModal } from './modal.js' // работа с модальными окнами
-import { createCard, handleDeleteCard, handleLikeCard, initialCards, constructCard } from './cards.js'
+import { createCard, deleteCard, likeCard, constructCard } from './cards.js'
+import { initialCards } from './initial_cards.js'
 
 
 //-------- Выводит карточки на страницу
@@ -15,7 +16,7 @@ const cardContainer  = document.querySelector('.places__list');
 function showAllCards() {
   initialCards.forEach((item) => {
     // создать карточку
-    const cardElement = createCard(item, handleDeleteCard, handleLikeCard, handleClickOnImage);
+    const cardElement = createCard(item, deleteCard, likeCard, clickOnImage);
 
     // добавить карточку в DOM
     cardContainer.append(cardElement);
@@ -29,10 +30,6 @@ const profileEditButton = document.querySelector('.profile__edit-button');
 const profileAddButton = document.querySelector('.profile__add-button');
 const popupEdit = document.querySelector('.popup_type_edit');
 const popupNewCard = document.querySelector('.popup_type_new-card');
-
-profileEditButton.addEventListener('click', function(evt) {
-  openModal(popupEdit);
-});
 
 profileAddButton.addEventListener('click', function(evt) {
   openModal(popupNewCard);
@@ -68,6 +65,7 @@ popupEdit.addEventListener('submit', handleEditFormSubmit);
 profileEditButton.addEventListener('click', function(evt) {
   nameInput.value = nameLabel.textContent;
   jobInput.value = jobLabel.textContent;
+  openModal(popupEdit);
 });
 
 
@@ -89,7 +87,7 @@ function handleCardFormSubmit(evt) {
 
   // создать карточку
   const card = constructCard(placeName, link);
-  const cardElement = createCard(card, handleDeleteCard, handleLikeCard, handleClickOnImage);
+  const cardElement = createCard(card, deleteCard, likeCard, clickOnImage);
 
   // добавить карточку в DOM в начало списка
   cardContainer.prepend(cardElement);
@@ -103,11 +101,11 @@ popupNewCard.addEventListener('submit', handleCardFormSubmit);
 
 
 //-------- модальное окно картинки
-function handleClickOnImage(evt) {
+function clickOnImage(imageElement) {
   // добавить картинку и подпись
-  popupImage.src = evt.target.src;
-  popupImage.alt = evt.target.alt;
-  popupCaption.textContent = evt.target.alt;
+  popupImage.src = imageElement.src;
+  popupImage.alt = imageElement.alt;
+  popupCaption.textContent = imageElement.alt;
 
   // открыть модальное окно
   openModal(popupTypeImage);
