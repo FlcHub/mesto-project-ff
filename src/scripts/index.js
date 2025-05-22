@@ -5,13 +5,20 @@ const popupTypeImage = document.querySelector('.popup_type_image');
 const popupImage = popupTypeImage.querySelector('.popup__image');
 const popupCaption = popupTypeImage.querySelector('.popup__caption');
 
+// контейнер, куда помещаются карточки
+const cardContainer  = document.querySelector('.places__list');
+
+// аватарка профиля
+const profileImage = document.querySelector('.profile__image');
+
 import { openModal, closeModal } from './modal.js' // работа с модальными окнами
 import { createCard, deleteCard, likeCard, constructCard } from './cards.js'
-import { initialCards } from './initial_cards.js'
 
+import { getInitialCards, getUserInfo, updateUserInfo, updateAvatarLink } from './api.js';
 
 //-------- Выводит карточки на страницу
-const cardContainer  = document.querySelector('.places__list');
+let initialCards = [];
+let userInfo = [];
 
 function showAllCards() {
   initialCards.forEach((item) => {
@@ -23,7 +30,25 @@ function showAllCards() {
   });
 }
 
-showAllCards();
+function setProfileAvatar(avatarLink) {
+  profileImage.style.backgroundImage = `url(${avatarLink})`;
+}
+
+// Получить информацию о пользователе и карточках через Promise.all,
+// так как отборажение карточек и работа с ними напрямую зависит от
+// информации о пользователе
+Promise.all([getUserInfo(), getInitialCards()])
+  .then((results) => {
+    userInfo = results[0];
+    initialCards = results[1];
+
+    setProfileAvatar(userInfo.avatar);
+    setProfileContent(userInfo.name, userInfo.about);
+    showAllCards();
+  })
+  .catch((err) => {
+    console.log(err);
+  });
 
 
 //-------- валидация форм
@@ -61,15 +86,28 @@ const jobInput = popupEdit.querySelector('.popup__input_type_description');
 const nameLabel = document.querySelector('.profile__title');
 const jobLabel = document.querySelector('.profile__description');
 
-// Обработчик «отправки» формы
+// отобразить информацию о профиле
+function setProfileContent(name, job) {
+  nameLabel.textContent = name;
+  jobLabel.textContent = job;
+}
+
+// Обработчик отправки формы
 function handleEditFormSubmit(evt) {
   evt.preventDefault(); // Отменить стандартную отправку формы.
 
   const name = nameInput.value;
   const job = jobInput.value;
 
-  nameLabel.textContent = name;
-  jobLabel.textContent = job;
+  updateUserInfo(name, job)
+    .then((res) => {
+      userInfo.name = res.name;
+      userInfo.about = res.about;
+      setProfileContent(userInfo.name, userInfo.about);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 
   closeModal(popupEdit);
 }
@@ -84,6 +122,40 @@ profileEditButton.addEventListener('click', function(evt) {
   jobInput.value = jobLabel.textContent;
   clearValidation(popupEdit.querySelector(popupProperties.formSelector), popupProperties);
   openModal(popupEdit);
+});
+
+
+//-------- модальное окно редактирования изображения профиля
+const popupAvatar = document.querySelector('.popup_type_avatar');
+const avatarLinkInput = popupAvatar.querySelector('.popup__input_type_url');
+
+// Обработчик отправки формы
+function handleAvatarSubmit(evt) {
+  evt.preventDefault(); // Отменить стандартную отправку формы.
+
+  const avatarLink = avatarLinkInput.value;
+
+  updateAvatarLink(avatarLink)
+    .then((res) => {
+      userInfo.avatar = res.avatar;
+      setProfileAvatar(userInfo.avatar);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+
+  closeModal(popupAvatar);
+}
+
+// Прикрепляем обработчик к форме:
+// он будет следить за событием “submit” - «отправка»
+popupAvatar.addEventListener('submit', handleAvatarSubmit);
+
+// Обработчик для кнопки, открывающей форму, чтобы перезаписать значения полей ввода
+profileImage.addEventListener('click', function(evt) {
+  avatarLinkInput.value = userInfo.avatar;
+  clearValidation(popupAvatar.querySelector(popupProperties.formSelector), popupProperties);
+  openModal(popupAvatar);
 });
 
 
