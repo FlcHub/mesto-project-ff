@@ -13,6 +13,14 @@ function hideInputError(formElement, inputElement, inputErrorClass, errorClass) 
 }
 
 function checkInputValidity(formElement, inputElement, inputErrorClass, errorClass) {
+  if (inputElement.validity.patternMismatch) {
+    // Данные атрибута доступны у элемента инпута через ключевое слово dataset.
+    // В HTML имя атрибута пишется в kebab-case, в js - camelCase
+    inputElement.setCustomValidity(inputElement.dataset.errorMessage);
+  } else {
+    inputElement.setCustomValidity("");
+  }
+
   if (!inputElement.validity.valid) {
     showInputError(formElement, inputElement, inputElement.validationMessage, inputErrorClass, errorClass);
   } else {

@@ -12,24 +12,109 @@ const cardContainer  = document.querySelector('.places__list');
 const profileImage = document.querySelector('.profile__image');
 
 import { openModal, closeModal } from './modal.js' // работа с модальными окнами
-import { createCard, deleteCard, likeCard, constructCard } from './cards.js'
+import { createCard, deleteCard, constructCard } from './cards.js'
 
-import { getInitialCards, getUserInfo, updateUserInfo, updateAvatarLink } from './api.js';
+import * as api from './api.js';
 
-//-------- Выводит карточки на страницу
+const hiddenElementClass = 'element-hidden';
+
+//-------- Отображение карточек и информации о профиле на странице
 let initialCards = [];
 let userInfo = [];
 
+//-------- Лайк карточки
+
+// проверить, если ли на карточке мой лайк
+function hasCardMyLike(card) {
+  return card.likes.some((item) => {
+    return item._id === userInfo._id;
+  });
+}
+
+// отобразить мой лайк, если он есть
+function showMyLike(card, cardElement) {
+  const likeButton  = cardElement.querySelector('.card__like-button');
+  const classList = likeButton.classList;
+
+  if (!hasCardMyLike(card)) {
+    classList.remove('card__like-button_is-active');
+  } else {
+    classList.add('card__like-button_is-active');
+  }
+}
+
+// отобразить количество лайков
+function showLikesCount(card, cardElement) {
+  // элемент с количеством лайков
+  const counterElement = cardElement.querySelector('.card__like-count');
+
+  // если лайков нет, то спрятать количество лайков вообще
+  const likesCount = card.likes.length;
+  if (likesCount === 0) {
+    counterElement.classList.add(hiddenElementClass);
+    return;
+  }
+
+  // иначе отобразить число лайков
+  counterElement.classList.remove(hiddenElementClass);
+  counterElement.textContent = likesCount;
+}
+
+// функция лайка карточки
+function likeCard(likeButton, cardElement, cardId) {
+  const classList = likeButton.classList;
+  if (classList.contains('card__like-button_is-active')) {
+    api.removeLike(cardId)
+      .then((res) => {
+        showMyLike(res, cardElement);
+        showLikesCount(res, cardElement);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  } else {
+    api.setLike(cardId)
+      .then((res) => {
+        showMyLike(res, cardElement);
+        showLikesCount(res, cardElement);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+}
+
+//-------- Удаление карточки карточки
+function isMyCard(card) {
+  return card._id === userInfo._id;
+}
+
+function showDeleteButton(card, cardElement) {
+  if (!isMyCard(card)) {
+    const deleteButton = cardElement.querySelector('.card__delete-button');
+    deleteButton.classList.add(hiddenElementClass);
+  }
+}
+
+//-------- Выводит карточки на страницу
 function showAllCards() {
   initialCards.forEach((item) => {
     // создать карточку
     const cardElement = createCard(item, deleteCard, likeCard, clickOnImage);
+
+    // отобразить состояние лайков
+    showLikesCount(item, cardElement);
+    showMyLike(item, cardElement);
+
+    // отобразить/скрыть корзинку удаления карточки
+    showDeleteButton(item, cardElement);
 
     // добавить карточку в DOM
     cardContainer.append(cardElement);
   });
 }
 
+//-------- установка нового аватара
 function setProfileAvatar(avatarLink) {
   profileImage.style.backgroundImage = `url(${avatarLink})`;
 }
@@ -37,7 +122,7 @@ function setProfileAvatar(avatarLink) {
 // Получить информацию о пользователе и карточках через Promise.all,
 // так как отборажение карточек и работа с ними напрямую зависит от
 // информации о пользователе
-Promise.all([getUserInfo(), getInitialCards()])
+Promise.all([api.getUserInfo(), api.getInitialCards()])
   .then((results) => {
     userInfo = results[0];
     initialCards = results[1];
@@ -99,7 +184,7 @@ function handleEditFormSubmit(evt) {
   const name = nameInput.value;
   const job = jobInput.value;
 
-  updateUserInfo(name, job)
+  api.updateUserInfo(name, job)
     .then((res) => {
       userInfo.name = res.name;
       userInfo.about = res.about;
@@ -135,7 +220,7 @@ function handleAvatarSubmit(evt) {
 
   const avatarLink = avatarLinkInput.value;
 
-  updateAvatarLink(avatarLink)
+  api.updateAvatarLink(avatarLink)
     .then((res) => {
       userInfo.avatar = res.avatar;
       setProfileAvatar(userInfo.avatar);

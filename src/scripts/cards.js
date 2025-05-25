@@ -35,7 +35,7 @@ function createCard(card, deleteCard, likeCard, clickOnImage) {
   // добавить к иконке лайка карточки обработчик клика,
   // по которому будет вызван likeCard
   const likeButton  = cardElement.querySelector('.card__like-button');
-  likeButton.addEventListener('click', () => { likeCard(likeButton)});
+  likeButton.addEventListener('click', () => { likeCard(likeButton, cardElement, card._id)});
 
   imageElement.addEventListener('click', () => { clickOnImage(imageElement)});
 
@@ -47,9 +47,4 @@ function deleteCard(cardElement) {
   cardElement.remove();
 }
 
-//-------- функция лайка карточки
-function likeCard(likeButton) {
-  likeButton.classList.toggle('card__like-button_is-active');
-}
-
-export { createCard, deleteCard, likeCard, constructCard };
+export { createCard, deleteCard, constructCard };
