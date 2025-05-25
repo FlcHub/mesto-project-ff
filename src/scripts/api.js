@@ -109,6 +109,19 @@ function addNewCard(name, link) {
     .then(handleAnswer);
 }
 
+// удалить карточку
+// возвращает: объект { "message" : "Пост удалён" }
+function deleteCard(cardId) {
+  return fetch(buildUrl(`cards/${cardId}`), {
+      method: 'DELETE',
+      headers: {
+        authorization: token,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(handleAnswer);
+}
+
 export {
   getInitialCards,
   getUserInfo,
@@ -116,5 +129,6 @@ export {
   updateAvatarLink,
   setLike,
   removeLike,
-  addNewCard
+  addNewCard,
+  deleteCard
 };

@@ -12,7 +12,7 @@ const cardContainer  = document.querySelector('.places__list');
 const profileImage = document.querySelector('.profile__image');
 
 import { openModal, closeModal } from './modal.js' // работа с модальными окнами
-import { createCard, deleteCard, constructCard } from './cards.js'
+import { createCard } from './cards.js'
 
 import * as api from './api.js';
 
@@ -86,14 +86,26 @@ function likeCard(likeButton, cardElement, cardId) {
 
 //-------- Удаление карточки карточки
 function isMyCard(card) {
-  return card._id === userInfo._id;
+  return card.owner._id === userInfo._id;
 }
 
+// отобразить кнопку удаления карточки, если это моя карточка
 function showDeleteButton(card, cardElement) {
   if (!isMyCard(card)) {
     const deleteButton = cardElement.querySelector('.card__delete-button');
     deleteButton.classList.add(hiddenElementClass);
   }
+}
+
+// функция удаления карточки
+function deleteCard(cardElement, cardId) {
+  api.deleteCard(cardId)
+    .then(() => {
+      cardElement.remove();
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 }
 
 //-------- Выводит карточки на страницу
@@ -113,6 +125,7 @@ function showAllCards() {
     cardContainer.append(cardElement);
   });
 }
+
 
 //-------- установка нового аватара
 function setProfileAvatar(avatarLink) {
@@ -151,6 +164,16 @@ const popupProperties = {
 enableValidation(popupProperties);
 
 
+//-------- обработка кнопки Submit в форме
+const buttonSubmitText = {
+  inProcess : "Сохранение...",
+  normal : "Сохранение",
+}
+function renderLoading(isLoading, buttonElement) {
+  buttonElement.textContent = isLoading ? buttonSubmitText.inProcess : buttonSubmitText.normal;
+}
+
+
 //-------- модальные окна всякие, обработка событий для открытия/закрытия модальных окон
 const profileEditButton = document.querySelector('.profile__edit-button');
 const profileAddButton = document.querySelector('.profile__add-button');
@@ -181,6 +204,10 @@ function setProfileContent(name, job) {
 function handleEditFormSubmit(evt) {
   evt.preventDefault(); // Отменить стандартную отправку формы.
 
+  // поменять текст на кнопке для отображения загрузки данных на сервер
+  const submitButtonElement = evt.target.querySelector('.popup__button');
+  renderLoading(true, submitButtonElement);
+
   const name = nameInput.value;
   const job = jobInput.value;
 
@@ -189,12 +216,14 @@ function handleEditFormSubmit(evt) {
       userInfo.name = res.name;
       userInfo.about = res.about;
       setProfileContent(userInfo.name, userInfo.about);
+      closeModal(popupEdit);
     })
     .catch((err) => {
       console.log(err);
+    })
+    .finally(() => {
+      renderLoading(false, submitButtonElement);
     });
-
-  closeModal(popupEdit);
 }
 
 // Прикрепляем обработчик к форме:
@@ -218,18 +247,24 @@ const avatarLinkInput = popupAvatar.querySelector('.popup__input_type_url');
 function handleAvatarSubmit(evt) {
   evt.preventDefault(); // Отменить стандартную отправку формы.
 
+  // поменять текст на кнопке для отображения загрузки данных на сервер
+  const submitButtonElement = evt.target.querySelector('.popup__button');
+  renderLoading(true, submitButtonElement);
+
   const avatarLink = avatarLinkInput.value;
 
   api.updateAvatarLink(avatarLink)
     .then((res) => {
       userInfo.avatar = res.avatar;
       setProfileAvatar(userInfo.avatar);
+      closeModal(popupAvatar);
     })
     .catch((err) => {
       console.log(err);
+    })
+    .finally(() => {
+      renderLoading(false, submitButtonElement);
     });
-
-  closeModal(popupAvatar);
 }
 
 // Прикрепляем обработчик к форме:
@@ -253,6 +288,10 @@ const linkInput = popupNewCard.querySelector('.popup__input_type_url');
 function handleCardFormSubmit(evt) {
   evt.preventDefault(); // Отменить стандартную отправку формы.
 
+  // поменять текст на кнопке для отображения загрузки данных на сервер
+  const submitButtonElement = evt.target.querySelector('.popup__button');
+  renderLoading(true, submitButtonElement);
+
   const placeName = placeNameInput.value;
   const link = linkInput.value;
 
@@ -260,15 +299,31 @@ function handleCardFormSubmit(evt) {
   placeNameInput.value = '';
   linkInput.value = '';
 
-  // создать карточку
-  const card = constructCard(placeName, link);
-  const cardElement = createCard(card, deleteCard, likeCard, clickOnImage);
+  // отправить запрос на добавление новой карточки
+  api.addNewCard(placeName, link)
+    .then((res) => {
+      // создать карточку
+      const cardElement = createCard(res, deleteCard, likeCard, clickOnImage);
 
-  // добавить карточку в DOM в начало списка
-  cardContainer.prepend(cardElement);
+      // отобразить лайки
+      showMyLike(res, cardElement);
+      showLikesCount(res, cardElement);
 
-  // закрыть модальное окно
-  closeModal(popupNewCard);
+      // отобразить кнопку удаления карточки
+      showDeleteButton(res, cardElement);
+
+      // добавить карточку в DOM в начало списка
+      cardContainer.prepend(cardElement);
+
+      // закрыть модальное окно
+      closeModal(popupNewCard);
+    })
+    .catch((err) => {
+      console.log(err);
+    })
+    .finally(() => {
+      renderLoading(false, submitButtonElement);
+    });
 }
 
 // Прикрепить обработчик к форме:

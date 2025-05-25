@@ -1,11 +1,4 @@
-function constructCard(placeName, link) {
-  return {
-    name: placeName,
-    link: link,
-  }
-}
-
-//-------- Добавление карточек в DOM
+//-------- Создание карточек для добавления в DOM
 const cardTemplate = document.querySelector('#card-template').content;
 
 // Создает элемент карточки для вывода в html
@@ -30,7 +23,7 @@ function createCard(card, deleteCard, likeCard, clickOnImage) {
   // добавить к иконке удаления обработчик клика,
   // по которому будет вызван deleteCard
   const deleteButton  = cardElement.querySelector('.card__delete-button');
-  deleteButton.addEventListener('click', () => { deleteCard(cardElement) });
+  deleteButton.addEventListener('click', () => { deleteCard(cardElement, card._id) });
 
   // добавить к иконке лайка карточки обработчик клика,
   // по которому будет вызван likeCard
@@ -42,9 +35,4 @@ function createCard(card, deleteCard, likeCard, clickOnImage) {
   return cardElement;
 }
 
-// Удаляет карточку
-function deleteCard(cardElement) {
-  cardElement.remove();
-}
-
-export { createCard, deleteCard, constructCard };
+export { createCard };
