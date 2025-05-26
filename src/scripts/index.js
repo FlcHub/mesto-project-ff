@@ -12,96 +12,35 @@ const cardContainer  = document.querySelector('.places__list');
 const profileImage = document.querySelector('.profile__image');
 
 import { openModal, closeModal } from './modal.js' // работа с модальными окнами
-import { createCard } from './cards.js'
+import * as cardLib from './cards.js'
 
 import * as api from './api.js';
 
-const hiddenElementClass = 'element-hidden';
-
 //-------- Отображение карточек и информации о профиле на странице
 let initialCards = [];
-let userInfo = [];
+let userId;
 
 //-------- Лайк карточки
-
-// проверить, если ли на карточке мой лайк
-function hasCardMyLike(card) {
-  return card.likes.some((item) => {
-    return item._id === userInfo._id;
-  });
-}
-
-// отобразить мой лайк, если он есть
-function showMyLike(card, cardElement) {
-  const likeButton  = cardElement.querySelector('.card__like-button');
-  const classList = likeButton.classList;
-
-  if (!hasCardMyLike(card)) {
-    classList.remove('card__like-button_is-active');
-  } else {
-    classList.add('card__like-button_is-active');
-  }
-}
-
-// отобразить количество лайков
-function showLikesCount(card, cardElement) {
-  // элемент с количеством лайков
-  const counterElement = cardElement.querySelector('.card__like-count');
-
-  // если лайков нет, то спрятать количество лайков вообще
-  const likesCount = card.likes.length;
-  if (likesCount === 0) {
-    counterElement.classList.add(hiddenElementClass);
-    return;
-  }
-
-  // иначе отобразить число лайков
-  counterElement.classList.remove(hiddenElementClass);
-  counterElement.textContent = likesCount;
-}
-
 // функция лайка карточки
 function likeCard(likeButton, cardElement, cardId) {
   const classList = likeButton.classList;
-  if (classList.contains('card__like-button_is-active')) {
-    api.removeLike(cardId)
-      .then((res) => {
-        showMyLike(res, cardElement);
-        showLikesCount(res, cardElement);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  } else {
-    api.setLike(cardId)
-      .then((res) => {
-        showMyLike(res, cardElement);
-        showLikesCount(res, cardElement);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
+  const req = classList.contains('card__like-button_is-active') ? api.removeLike : api.setLike;
+  req(cardId)
+    .then((res) => {
+      cardLib.showMyLike(cardElement, res, userId);
+      cardLib.showLikesCount(cardElement, res);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 }
 
-//-------- Удаление карточки карточки
-function isMyCard(card) {
-  return card.owner._id === userInfo._id;
-}
-
-// отобразить кнопку удаления карточки, если это моя карточка
-function showDeleteButton(card, cardElement) {
-  if (!isMyCard(card)) {
-    const deleteButton = cardElement.querySelector('.card__delete-button');
-    deleteButton.classList.add(hiddenElementClass);
-  }
-}
-
+//-------- Удаление карточки
 // функция удаления карточки
 function deleteCard(cardElement, cardId) {
   api.deleteCard(cardId)
     .then(() => {
-      cardElement.remove();
+      cardLib.deleteCard(cardElement);
     })
     .catch((err) => {
       console.log(err);
@@ -112,14 +51,7 @@ function deleteCard(cardElement, cardId) {
 function showAllCards() {
   initialCards.forEach((item) => {
     // создать карточку
-    const cardElement = createCard(item, deleteCard, likeCard, clickOnImage);
-
-    // отобразить состояние лайков
-    showLikesCount(item, cardElement);
-    showMyLike(item, cardElement);
-
-    // отобразить/скрыть корзинку удаления карточки
-    showDeleteButton(item, cardElement);
+    const cardElement = cardLib.createCard(item, deleteCard, likeCard, clickOnImage, userId);
 
     // добавить карточку в DOM
     cardContainer.append(cardElement);
@@ -137,8 +69,10 @@ function setProfileAvatar(avatarLink) {
 // информации о пользователе
 Promise.all([api.getUserInfo(), api.getInitialCards()])
   .then((results) => {
-    userInfo = results[0];
+    const userInfo = results[0];
     initialCards = results[1];
+
+    userId = userInfo._id;
 
     setProfileAvatar(userInfo.avatar);
     setProfileContent(userInfo.name, userInfo.about);
@@ -213,9 +147,7 @@ function handleEditFormSubmit(evt) {
 
   api.updateUserInfo(name, job)
     .then((res) => {
-      userInfo.name = res.name;
-      userInfo.about = res.about;
-      setProfileContent(userInfo.name, userInfo.about);
+      setProfileContent(res.name, res.about);
       closeModal(popupEdit);
     })
     .catch((err) => {
@@ -255,8 +187,7 @@ function handleAvatarSubmit(evt) {
 
   api.updateAvatarLink(avatarLink)
     .then((res) => {
-      userInfo.avatar = res.avatar;
-      setProfileAvatar(userInfo.avatar);
+      setProfileAvatar(res.avatar);
       closeModal(popupAvatar);
     })
     .catch((err) => {
@@ -273,7 +204,6 @@ popupAvatar.addEventListener('submit', handleAvatarSubmit);
 
 // Обработчик для кнопки, открывающей форму, чтобы перезаписать значения полей ввода
 profileImage.addEventListener('click', function(evt) {
-  avatarLinkInput.value = userInfo.avatar;
   clearValidation(popupAvatar.querySelector(popupProperties.formSelector), popupProperties);
   openModal(popupAvatar);
 });
@@ -303,14 +233,7 @@ function handleCardFormSubmit(evt) {
   api.addNewCard(placeName, link)
     .then((res) => {
       // создать карточку
-      const cardElement = createCard(res, deleteCard, likeCard, clickOnImage);
-
-      // отобразить лайки
-      showMyLike(res, cardElement);
-      showLikesCount(res, cardElement);
-
-      // отобразить кнопку удаления карточки
-      showDeleteButton(res, cardElement);
+      const cardElement = cardLib.createCard(res, deleteCard, likeCard, clickOnImage, userId);
 
       // добавить карточку в DOM в начало списка
       cardContainer.prepend(cardElement);
